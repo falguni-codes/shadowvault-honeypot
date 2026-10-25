@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShadowVault | Cyber Operations Command</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            background-color: #050811;
+            background-image: linear-gradient(rgba(5, 8, 17, 0.7), rgba(11, 16, 31, 0.9)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop');
+            background-size: cover; background-position: center; background-attachment: fixed; color: #f8fafc; display: flex; height: 100vh; overflow: hidden;
+        }
+        .glass-panel { background: rgba(10, 15, 28, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); border-radius: 6px; }
+        .sidebar { width: 240px; border-right: 1px solid rgba(56, 189, 248, 0.15); padding: 25px 15px; display: flex; flex-direction: column; background: #080d19; }
+        .logo { font-size: 20px; font-weight: 700; margin-bottom: 35px; display: flex; align-items: center; gap: 8px; }
+        .logo span { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-item { padding: 12px 14px; margin-bottom: 8px; border-radius: 4px; color: #94a3b8; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover, .nav-item.active { background: rgba(56, 189, 248, 0.1); color: #e0f2fe; border-left: 3px solid #38bdf8; }
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .top-header h2 { font-size: 20px; font-weight: 600; color: #ffffff; letter-spacing: 0.5px; }
+        .status-pill { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 5px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .pulse-dot { width: 6px; height: 6px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 1.5s infinite; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .glass-card { padding: 15px; transition: transform 0.2s; }
+        .card-title { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .card-value { font-family: 'Roboto Mono', monospace; font-size: 28px; font-weight: 700; color: #e2e8f0; }
+        .charts-grid { display: grid; grid-template-columns: 2.5fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .chart-box { padding: 15px; display: flex; flex-direction: column; background: #050a14; border: 1px solid #1e293b; }
+        .section-title { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #94a3b8; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .canvas-container { position: relative; height: 220px; width: 100%; }
+        .table-container { width: 100%; padding: 15px; margin-bottom: 20px; background: #0a0f1c; border: 1px solid #1e293b; }
+        table { width: 100%; border-collapse: collapse; }
+        th { color: #64748b; font-family: 'Roboto Mono', monospace; font-size: 10px; text-transform: uppercase; padding: 10px; text-align: left; border-bottom: 1px solid #1e293b; }
+        td { padding: 10px; font-size: 12px; color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        tr:hover td { background: rgba(56, 189, 248, 0.05); }
+        .tag { padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; font-family: 'Roboto Mono', monospace;}
+        .tag-bot { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .tag-human { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+        .score-high { color: #f87171; font-weight: 700; }
+        .score-low { color: #34d399; font-weight: 600; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="logo">
+        <i class="fa-solid fa-server" style="color: #38bdf8;"></i>
+        <span>ShadowVault</span>
+    </div>
+    <div class="nav-item active"><i class="fa-solid fa-microchip"></i> Packet Scope</div>
+    <div class="nav-item dummy-btn"><i class="fa-solid fa-network-wired"></i> Traffic Flow</div>
+    <div class="nav-item dummy-btn"><i class="fa-solid fa-spider"></i> Threat Intel</div>
+    <div class="nav-item" id="exportBtn"><i class="fa-solid fa-file-csv"></i> Export Datasets</div>
+    <div class="nav-item dummy-btn" style="margin-top: auto;"><i class="fa-solid fa-terminal"></i> Terminal</div>
+</aside>
+
+<main class="main-content">
+    <div class="top-header">
+        <div>
+            <h2>Threat Monitoring Console</h2>
+            <p style="color: #64748b; font-size: 11px; font-family: 'Roboto Mono', monospace; margin-top: 3px;">[Live Monitor] REPORT SUCCESS</p>
+        </div>
+        <div class="status-pill">
+            <div class="pulse-dot"></div> CAPTURE: ON (8083)
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="glass-card glass-panel">
+            <div class="card-title">Packet Drops <i class="fa-solid fa-shield-virus" style="color: #38bdf8;"></i></div>
+            <div class="card-value" id="totalAttacks">0</div>
+        </div>
+        <div class="glass-card glass-panel">
+            <div class="card-title">Peak Anomaly <i class="fa-solid fa-skull-crossbones" style="color: #f87171;"></i></div>
+            <div class="card-value" id="maxScore" style="color: #f87171;">0</div>
+        </div>
+        <div class="glass-card glass-panel">
+            <div class="card-title">Bot Signatures <i class="fa-solid fa-robot" style="color: #fbbf24;"></i></div>
+            <div class="card-value" id="totalBots">0</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-box glass-panel">
+            <div class="section-title"><i class="fa-solid fa-wave-square" style="color: #39ff14;"></i> PACKET SCOPE TELEMETRY</div>
+            <div class="canvas-container"><canvas id="trafficChart"></canvas></div>
+        </div>
+        <div class="chart-box glass-panel">
+            <div class="section-title"><i class="fa-solid fa-fingerprint" style="color: #38bdf8;"></i> VECTOR</div>
+            <div class="canvas-container"><canvas id="attackChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="table-container glass-panel">
+        <div class="section-title"><i class="fa-solid fa-list-check" style="color: #38bdf8;"></i> RAW INTRUSION LOGS</div>
+        <table>
+            <thead>
+            <tr>
+                <th>Source IP</th>
+                <th>Location 🌍</th>
+                <th>Timestamp (ms)</th>
+                <th>Threat Score</th>
+                <th>Classification</th>
+                <th>Payload Fingerprint</th>
+            </tr>
+            </thead>
+            <tbody id="logTableBody"></tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    const generateDenseData = (attackCount) => {
+        const dataPoints = 250;
+        const labels = [];
+        const data = [];
+        for(let i = 0; i < dataPoints; i++) {
+            labels.push('');
+            let noise = Math.random() * 40 + 30;
+            if(Math.random() > 0.95) noise += Math.random() * 100;
+            data.push(noise);
+        }
+        if(attackCount > 0) {
+            data[248] = attackCount * 15 + 150;
+            data[245] = attackCount * 8 + 100;
+            data[242] = attackCount * 10 + 120;
+        }
+        return { labels, data };
+    };
+
+    fetch('/api/v1/bank/admin/logs')
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.getElementById('logTableBody');
+            let totalAttacks = data.length;
+            let maxScore = 0;
+            let botCount = 0;
+            let humanCount = 0;
+
+            data.reverse().forEach(log => {
+                if (log.threatScore > maxScore) maxScore = log.threatScore;
+                if (log.attackType.includes('Bot')) botCount++;
+                else humanCount++;
+
+                let scoreClass = log.threatScore >= 50 ? 'score-high' : 'score-low';
+                let typeBadge = log.attackType.includes('Bot') ? `<span class="tag tag-bot">BOT_SCRIPT</span>` : `<span class="tag tag-human">MANUAL_REQ</span>`;
+                let shortAgent = log.userAgent && log.userAgent.length > 50 ? log.userAgent.substring(0, 50) + '...' : log.userAgent;
+                let locationData = log.location ? log.location : 'Unknown';
+
+                const row = `<tr>
+                        <td style="font-family: 'Roboto Mono', monospace; color: #38bdf8;">${log.ipAddress}</td>
+                        <td style="color: #a78bfa; font-weight: 600; font-size: 11px;">${locationData}</td>
+                        <td style="color: #cbd5e1; font-family: 'Roboto Mono', monospace; font-size: 11px;">${log.attackTime}</td>
+                        <td style="font-family: 'Roboto Mono', monospace;"><span class="${scoreClass}">${log.threatScore}</span></td>
+                        <td>${typeBadge}</td>
+                        <td title="${log.userAgent}" style="color: #94a3b8; font-family: 'Roboto Mono', monospace; font-size: 10px;">${shortAgent}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('totalAttacks').innerText = totalAttacks;
+            document.getElementById('maxScore').innerText = maxScore;
+            document.getElementById('totalBots').innerText = botCount;
+
+            const ctxPie = document.getElementById('attackChart').getContext('2d');
+            new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bot', 'Human'],
+                    datasets: [{ data: [botCount, humanCount], backgroundColor: ['#fbbf24', '#38bdf8'], borderColor: '#050a14', borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#64748b', font: { family: 'Roboto Mono', size: 10 } } } } }
+            });
+
+            const pcapData = generateDenseData(totalAttacks);
+            const ctxLine = document.getElementById('trafficChart').getContext('2d');
+            new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: pcapData.labels,
+                    datasets: [{ label: 'Traffic', data: pcapData.data, borderColor: '#39ff14', backgroundColor: '#1d4ed8', borderWidth: 1.5, pointRadius: 0, tension: 0, fill: true }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false }, beginAtZero: true, ticks: { color: '#e2e8f0', font: { family: 'Roboto Mono', size: 9 }, callback: function(value) { return value + ' Mbps'; } } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false }, ticks: { display: false } }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+
+    // Security Alert for Dummy Buttons
+    document.querySelectorAll('.dummy-btn').forEach(item => {
+        item.addEventListener('click', function() {
+            alert("🔒 ACCESS DENIED: Level 4 Admin Clearance Required to access this module.");
+        });
+    });
+
+    // NAYA FEATURE: Export to CSV (Excel)
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        fetch('/api/v1/bank/admin/logs')
+            .then(res => res.json())
+            .then(data => {
+                if(data.length === 0) { alert("No logs available to export."); return; }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Source IP,Location,Timestamp,Threat Score,Classification,Payload Fingerprint\n"; // Column Headers
+
+                data.forEach(log => {
+                    let location = log.location ? log.location : 'Unknown';
+                    let safeAgent = log.userAgent ? log.userAgent.replace(/,/g, " ") : "Unknown"; // Remove commas to prevent CSV breakage
+                    csvContent += `${log.ipAddress},${location},${log.attackTime},${log.threatScore},${log.attackType},"${safeAgent}"\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "ShadowVault_Intrusion_Logs.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(error => console.error('Export failed:', error));
+    });
+</script>
+</body>
+</html>

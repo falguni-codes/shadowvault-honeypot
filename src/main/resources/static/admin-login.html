@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Administrator | Access Gateway</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #050811;
+            /* Dashboard wala same background unify karne ke liye */
+            background-image:
+                    linear-gradient(rgba(5, 8, 17, 0.75), rgba(11, 16, 31, 0.95)),
+                    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #e2e8f0;
+        }
+
+        .panel-container {
+            width: 400px;
+            /* Frosted Glass Effect */
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 30px 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-header i { font-size: 28px; color: #94a3b8; margin-bottom: 12px; }
+        .panel-header h1 { margin: 0; font-size: 18px; color: #f8fafc; font-weight: 600; letter-spacing: 0.5px; }
+        .panel-header p { font-family: 'Roboto Mono', monospace; font-size: 11px; color: #64748b; margin: 8px 0 0 0; text-transform: uppercase; }
+
+        .panel-body { padding: 30px; }
+
+        .input-group { margin-bottom: 18px; position: relative; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; font-weight: 500; margin-bottom: 6px; }
+        .input-group i { position: absolute; left: 12px; top: 35px; color: #4b5563; font-size: 13px; }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 10px 10px 35px;
+            background: rgba(3, 7, 18, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+            font-family: 'Roboto Mono', monospace;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus { border-color: #3b82f6; outline: none; background: rgba(3, 7, 18, 0.9); }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover { background: #1d4ed8; }
+
+        .panel-footer {
+            padding: 12px 30px;
+            background: rgba(2, 6, 23, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #64748b;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        #errorMsg {
+            color: #f87171;
+            font-size: 11px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+            padding: 10px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="panel-container">
+    <div class="panel-header">
+        <i class="fa-solid fa-server"></i>
+        <h1>Enterprise Management Console</h1>
+        <p>System Authentication Required</p>
+    </div>
+
+    <div class="panel-body">
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Administrator Username</label>
+                <i class="fa-solid fa-user"></i>
+                <input type="text" name="username" placeholder="root / admin" required autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label>Access Credential</label>
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" id="loginBtn" class="login-btn">Authenticate</button>
+        </form>
+        <div id="errorMsg"><i class="fa-solid fa-circle-exclamation"></i> Error 401: Invalid credentials provided. Event logged.</div>
+    </div>
+
+    <div class="panel-footer">
+        <span>v2.4.1 (Stable)</span>
+        <span><i class="fa-solid fa-shield-halved"></i> SECURE CONNECTION</span>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let btn = document.getElementById('loginBtn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+        btn.style.opacity = '0.7';
+
+        let formData = new FormData(this);
+
+        fetch('/api/v1/bank/admin/login', {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+        }).then(response => response.text()).then(data => {
+            btn.innerHTML = 'Authenticate';
+            btn.style.opacity = '1';
+            document.getElementById('errorMsg').style.display = 'block';
+        });
+    });
+</script>
+</body>
+</html>
